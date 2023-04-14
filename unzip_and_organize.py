@@ -1,43 +1,81 @@
+import io
+import csv
 import zipfile
+import traceback
+import sys
 import os
+import boto3
 
-ZIPFILES_PATH = "./tables/zip/"
-TABLES_PATH = "./tables_cnes_database/"
+BUCKET_NAME = "files-cnes-datasus"
+BASE_FILES_NAME = "BASE_DE_DADOS_CNES"
+SITE = "ftp.datasus.gov.br"
+FTP_FOLDER = "cnes"
 
-zipfiles = os.listdir(ZIPFILES_PATH)
+s3_client = boto3.client("s3")
+s3_resource = boto3.resource("s3")
+#-----------------------------------------------------------------FUNCTIONS-----------------------------------------------------------------#
+def print_error() -> None:
+    """Print the error message and exit script."""
+    traceback.print_exc()
+    print("Closing...")
+    sys.exit()
 
-def unzip_file(zipfile_name: list[str], zipfiles_path: str, tables_path: str) -> None:
-    """Extract zip file to tables_path creating folder to organize per year and month"""
-    with zipfile.ZipFile(zipfiles_path + zipfile_name, "r") as zf:
-        digits = zipfile_name.split(".")[0][-6:] # getting digits for year and month
-        full_path = tables_path + digits[:4] + "/" + digits[-2:] + "/"
-                                # year              # month 
-
-        if not os.path.exists(full_path): # if folder doesn't exist, create the folder
-            os.makedirs(full_path)
-            print(f"Extracting from {zipfile_name}...")
-            zf.extractall(full_path)
-            print(f"Files from {zipfile_name} extracted.\n")
-        else:
-            if not os.listdir(full_path): # if directory is empty
-                print(f"Extracting from {zipfile_name}...")
-                zf.extractall(full_path)
-                print(f"Files from {zipfile_name} extracted.\n")
-            else:
-                pass
-        return 1
-
-count = 0
-
-for z in zipfiles:
+def get_list_names_zipfiles_bucket(s3_client: boto3.client, bucket: str) -> list[str]:
+    """Get list of all zipfiles in folder 'zipfiles/'"""
     try:
-        count += unzip_file(z, ZIPFILES_PATH, TABLES_PATH)
-    except zipfile.BadZipFile: # case the zipfile isn't opening
-        print(f"{z} is corrupted, the file will be deleted and downloaded again...\n")
-        os.remove(ZIPFILES_PATH + z)
-        with open("download_zipfiles.py", "r") as download_zipfiles:
-            exec(download_zipfiles.read())
-        count += unzip_file(z, ZIPFILES_PATH, TABLES_PATH)
+        print("Getting list of zipfiles in S3 Bucket...")
+        response = s3_client.list_objects(Bucket=bucket)["Contents"]
+        content_zipfiles = [k["Key"] for k in response if k["Key"].startswith("zipfiles/")]
+        if len(content_zipfiles) == 1:
+            print("No zip files in Bucket folder 'zipfiles/'.\n")
+            return []
+        else:
+            print("Names collected.\n")
+            return [item[len("zipfiles/"):] for item in content_zipfiles][1:]
+    except:
+        print("Error getting names of zipfiles in Bucket.")
+        print_error()
 
-if count == len(zipfiles):
-    print("All files unziped.")
+def download_zipfile_bucket(s3_client: boto3.client, bucket: str, file: str) -> None:
+    """Download zipfile from S3 Bucket in the same folder that the script is located."""
+    print(f"\nDownloading {file}...")
+    s3_client.download_file(
+        Bucket=bucket,
+        Key="zipfiles/" + file,
+        Filename="./" + file
+    )
+    print(f"{file} downloaded.\n")
+
+def unzip_and_organize(s3_client: boto3.client, bucket: str, zip: str, folder: str) -> None:
+    """"""
+    print(f"\nUnziping {zip}...")
+    with zipfile.ZipFile(zip, "r") as zf: # openning zipfile
+        print(f"{zip} unziped.\n")
+        for f in zf.namelist():
+            print(f"Writing {f}...")
+            with zf.open(f, "r") as table: # opening target file
+                r = csv.reader(io.TextIOWrapper(table, "utf-8"), delimiter=";") # decoding and reading file
+                rows = [row for row in r]
+
+                buff = io.StringIO()
+                csv.writer(buff).writerows(rows)
+
+                s3_client.put_object(Bucket=bucket, Key="raw_tables/" + folder + f, Body=buff.getvalue().encode("utf-8", "replace"))
+                print(f"{f} written.")
+
+def get_list_names_raw_tables_bucket(s3_client: boto3.client, bucket: str, folder: str) -> list[str]:
+    """Get list of all content in 'raw_tables/' plus the folder from the input"""
+    response = s3_client.list_objects(Bucket=bucket)["Contents"]
+    return [k["Key"] for k in response if k["Key"].startswith("raw_tables/" + folder)]
+#-----------------------------------------------------------------SCRIPT-----------------------------------------------------------------#
+# GET ZIPFILES NAMES FROM 'zipfiles/'
+names_zipfiles_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
+
+# DOWNLOAD ZIPFILES, UNZIP AND WRTIE CSV INTO 'raw_tables/'
+for z in names_zipfiles_bucket:
+    year_month = z.split(".")[0][-6:]
+    folder = year_month[:4] + "/" + year_month[-2:] + "/"
+    if len(get_list_names_raw_tables_bucket(s3_client, BUCKET_NAME, folder)) == 0:
+        download_zipfile_bucket(s3_client, BUCKET_NAME, z)
+        unzip_and_organize(s3_client, BUCKET_NAME, z, folder)
+        os.remove(z)
