@@ -119,4 +119,4 @@ else:
                 pass
             except:
                 print_error()
-        zipfiles_names_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
+            zipfiles_names_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
