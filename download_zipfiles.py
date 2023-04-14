@@ -33,7 +33,7 @@ def get_list_names_zipfiles_bucket(s3_client: boto3.client, bucket: str) -> list
         print("Error getting names of zipfiles in Bucket.")
         print_error()
     
-def download_zipfile(site: str, ftp_folder: str, zip_files_path: str, zipfiles_names_bucket: list[str], file: str) -> None:
+def download_zipfile(site: str, ftp_folder: str, zip_files_path: str, file: str) -> None:
     """Access the ftp connection, go to folder and download files with the base name passed as an argument."""
     with FTP(site) as ftp:
         try:
@@ -52,14 +52,13 @@ def download_zipfile(site: str, ftp_folder: str, zip_files_path: str, zipfiles_n
                 sys.exit()
         except:
             print_error()
-        if file not in zipfiles_names_bucket: # if file isn't already on S3 Bucket folder
-            with open(zip_files_path + f"{file}", "wb") as f:
-                print(f"Downloading {file}...")
-                retCode = ftp.retrbinary(f"RETR {file}", f.write) # download the file and return a string with the response
-                if retCode.startswith("226"):
-                    print(f"{file} downloaded.\n")
-                else:
-                    print(f"Error downloading {file}: {retCode}")
+        with open(zip_files_path + f"{file}", "wb") as f:
+            print(f"Downloading {file}...")
+            retCode = ftp.retrbinary(f"RETR {file}", f.write) # download the file and return a string with the response
+            if retCode.startswith("226"):
+                print(f"{file} downloaded.\n")
+            else:
+                print(f"Error downloading {file}: {retCode}")
 
 def upload_zipfile(s3_resource: boto3.resource, filename: str, bucket: str, key: str) -> None:
     """Save local zipfile on S3 Bucket folder zipfiles/"""
@@ -110,13 +109,14 @@ if sorted(zipfiles_names_ftp) == sorted(zipfiles_names_bucket):
 else:
     # DOWNLOADING AND UPLOADING ZIPFILES
     for z in zipfiles_names_ftp:
-        try:
-            download_zipfile(SITE, FTP_FOLDER, "./", zipfiles_names_bucket, z)
-            upload_zipfile(s3_resource, z, BUCKET_NAME, z)
-            os.remove(z)
-        except EOFError: # server constantly is disconnected and give this error
-            print("EOFError, reconnecting...")
-            pass
-        except:
-            print_error()
+        if z not in zipfiles_names_bucket:
+            try:
+                download_zipfile(SITE, FTP_FOLDER, "./", z)
+                upload_zipfile(s3_resource, z, BUCKET_NAME, z)
+                os.remove(z)
+            except EOFError: # server constantly is disconnected and give this error
+                print("EOFError, reconnecting...")
+                pass
+            except:
+                print_error()
         zipfiles_names_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
