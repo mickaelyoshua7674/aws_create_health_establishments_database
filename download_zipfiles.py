@@ -2,52 +2,62 @@ from ftplib import FTP
 import traceback
 import sys
 import os
+import boto3
 
-ZIP_FILES_PATH = "./tables/zip/"
+BUCKET_NAME = "files-cnes-datasus"
 BASE_FILES_NAME = "BASE_DE_DADOS_CNES"
 SITE = "ftp.datasus.gov.br"
 FTP_FOLDER = "cnes"
 
+s3_client = boto3.client("s3")
+s3_resource = boto3.resource("s3")
+#-----------------------------------------------------------------FUNCTIONS-----------------------------------------------------------------#
 def print_error() -> None:
     """Print the error message and exit script."""
     traceback.print_exc()
     print("Closing...")
     sys.exit()
 
-def download_zipfiles(site: str, ftp_folder: str, base_files_name: str, zip_files_path: str, zipfiles_names_dir: str, zipfiles_names_ftp: str) -> None:
+def get_list_names_zipfiles_bucket(s3_client: boto3.client, bucket: str) -> list[str]:
+    try:
+        print("Getting list of zipfiles in S3 Bucket...")
+        response = s3_client.list_objects(Bucket=bucket)["Contents"]
+        content_zipfiles = [k["Key"] for k in response if k["Key"].startswith("zipfiles/")]
+        if len(content_zipfiles) == 1:
+            print("No zip files in Bucket folder 'zipfiles/'.")
+            return []
+        else:
+            print("Names collected.\n")
+            return [item[len("zipfiles/"):] for item in content_zipfiles][1:]
+    except:
+        print("Error getting names of zipfiles in Bucket.")
+        print_error()
+    
+def download_zipfile(ftp: FTP, zip_files_path: str, zipfiles_names_bucket: list[str], file: str) -> None:
     """Access the ftp connection, go to folder and download files with the base name passed as an argument."""
-    with FTP(site) as ftp:
-        try:
-            # LOGIN
-            if ftp.login().startswith("230"): # ftp.login() enter the connection and return a string with the response
-                print("Logged in.\n")
+    if file not in zipfiles_names_bucket: # if file isn't already on S3 Bucket folder
+        with open(zip_files_path + f"{file}", "wb") as f:
+            print(f"Downloading {file}...")
+            retCode = ftp.retrbinary(f"RETR {file}", f.write) # download the file and return a string with the response
+            if retCode.startswith("226"):
+                print(f"{file} downloaded.\n")
             else:
-                print("Failed to log in.")
-                sys.exit()
+                print(f"Error downloading {file}: {retCode}")
 
-            # GO TO 'cnes' DIRECTORY
-            if ftp.cwd(ftp_folder).startswith("250"): # ftp.cwd() 'change working diretory' to cnes and return a string with the response
-                print("Directory changed to 'cnes'.\n")
-            else:
-                print("Failed to change directory.")
-                sys.exit()
-        except:
-            print_error()
-
-        print("Downloading zipfiles:")
-        for file in zipfiles_names_ftp:
-            if file.startswith(base_files_name) and file not in zipfiles_names_dir: # if file isn't already on local folder
-                with open(zip_files_path + f"{file}", "wb") as f:
-                    print(f"Downloading {file}...")
-                    retCode = ftp.retrbinary(f"RETR {file}", f.write) # download the file and return a string with the response
-                    if retCode.startswith("226"):
-                        print(f"{file} downloaded.")
-                    else:
-                        print(f"Error downloading file: {retCode}")
-
-# GET ZIPFILES NAMES FROM DIR
-zipfiles_names_dir = os.listdir(ZIP_FILES_PATH)
-
+def upload_zipfile(s3_resource: boto3.resource, filename: str, bucket: str, key: str) -> None:
+    """Save local zipfile on S3 Bucket folder zipfiles/"""
+    try:
+        print(f"Uploading {filename}...")
+        s3_resource.meta.client.upload_file(
+        Filename=filename,
+        Bucket=bucket,
+        Key="zipfiles/" + key
+        )
+        print(f"{filename} uploaded.\n")
+    except:
+        print("Error uploading files.")
+        print_error()
+#-----------------------------------------------------------------SCRIPT-----------------------------------------------------------------#
 # GET ZIPFILES NAMES FROM FTP
 with FTP("ftp.datasus.gov.br") as ftp:
     try:
@@ -75,12 +85,28 @@ with FTP("ftp.datasus.gov.br") as ftp:
     except:
         print_error()
 
-while len(zipfiles_names_ftp) != len(zipfiles_names_dir):
-    try:
-        download_zipfiles(SITE, FTP_FOLDER, BASE_FILES_NAME, ZIP_FILES_PATH, zipfiles_names_dir, zipfiles_names_ftp)
-    except EOFError: # server constantly is disconnected and give this error
-        print("EOFError, reconnecting...\n")
-        pass
-    except:
-        print_error()
-    zipfiles_names_dir = os.listdir(ZIP_FILES_PATH)
+    # GET ZIPFILES NAMES FROM S3 BUCKET
+    zipfiles_names_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
+
+    if sorted(zipfiles_names_ftp) == sorted(zipfiles_names_bucket):
+        print("All zipfiles are uploaded into S3 Bucket.")
+    else:
+        # DOWNLOADING ZIPFILES
+        while sorted(zipfiles_names_ftp) != sorted(zipfiles_names_bucket):
+            for z in zipfiles_names_ftp:
+                try:
+                    download_zipfile(ftp, "./", zipfiles_names_bucket, z)
+                except EOFError: # server constantly is disconnected and give this error
+                    print("EOFError, reconnecting...\n")
+                    pass
+                except:
+                    print_error()
+            zipfiles_names_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
+
+        # UPLOADING ZIPFILES
+        local_zipfles_names = [f for f in os.listdir("./") if f.endswith(".ZIP")]
+        for z in local_zipfles_names:
+            upload_zipfile(s3_resource, z, BUCKET_NAME, z)
+        
+        for f in local_zipfles_names:
+            os.remove(f)
