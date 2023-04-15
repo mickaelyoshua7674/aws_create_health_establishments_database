@@ -5,6 +5,7 @@ import traceback
 import sys
 import os
 import boto3
+import shutil
 
 BUCKET_NAME = "files-cnes-datasus"
 BASE_FILES_NAME = "BASE_DE_DADOS_CNES"
@@ -38,7 +39,7 @@ def get_list_names_zipfiles_bucket(s3_client: boto3.client, bucket: str) -> list
 
 def download_zipfile_bucket(s3_client: boto3.client, bucket: str, file: str) -> None:
     """Download zipfile from S3 Bucket in the same folder that the script is located."""
-    print(f"\nDownloading {file}...")
+    print(f"Downloading {file}...")
     s3_client.download_file(
         Bucket=bucket,
         Key="zipfiles/" + file,
@@ -67,6 +68,23 @@ def get_list_names_raw_tables_bucket(s3_client: boto3.client, bucket: str, folde
     """Get list of all content in 'raw_tables/' plus the folder from the input"""
     response = s3_client.list_objects(Bucket=bucket)["Contents"]
     return [k["Key"] for k in response if k["Key"].startswith("raw_tables/" + folder)]
+
+def upload_tables(s3_resource: boto3.resource, bucket: str, z: str, folder) -> None:
+    print(f"Extracting {z}...")
+    with zipfile.ZipFile(z, "r") as zf: # openning zipfile
+        zf.extractall(folder)
+        print(f"{z} extracted.\n")
+    os.remove(z)
+
+    print(f"Uploading tables from {z}...")
+    for table in os.listdir(folder):
+        s3_resource.meta.client.upload_file(
+            Filename=folder + table,
+            Bucket=bucket,
+            Key="raw_tables/" + folder + table
+        )
+    print("Tables uploaded.\n")
+    shutil.rmtree(folder[:4])
 #-----------------------------------------------------------------SCRIPT-----------------------------------------------------------------#
 # GET ZIPFILES NAMES FROM 'zipfiles/'
 names_zipfiles_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
@@ -77,5 +95,5 @@ for z in names_zipfiles_bucket:
     folder = year_month[:4] + "/" + year_month[-2:] + "/"
     if len(get_list_names_raw_tables_bucket(s3_client, BUCKET_NAME, folder)) == 0:
         download_zipfile_bucket(s3_client, BUCKET_NAME, z)
-        unzip_and_organize(s3_client, BUCKET_NAME, z, folder)
-        os.remove(z)
+        os.makedirs(folder)
+        upload_tables(s3_resource, BUCKET_NAME, z, folder)

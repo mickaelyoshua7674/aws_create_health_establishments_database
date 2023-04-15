@@ -65,9 +65,9 @@ def upload_zipfile(s3_resource: boto3.resource, filename: str, bucket: str, key:
     try:
         print(f"Uploading {filename}...")
         s3_resource.meta.client.upload_file(
-        Filename=filename,
-        Bucket=bucket,
-        Key="zipfiles/" + key
+            Filename=filename,
+            Bucket=bucket,
+            Key="zipfiles/" + key
         )
         print(f"{filename} uploaded.\n")
     except:
