@@ -63,8 +63,11 @@ def unzip_and_organize(s3_client: boto3.client, bucket: str, zip: str, folder: s
 
 def get_list_names_raw_tables_bucket(s3_client: boto3.client, bucket: str, folder: str) -> list[str]:
     """Get list of all content in 'raw_tables/' plus the folder from the input"""
-    response = s3_client.list_objects(Bucket=bucket, Prefix="raw_tables/")["Contents"]
-    return [k["Key"] for k in response if k["Key"].startswith("raw_tables/" + folder)]
+    try:
+        response = s3_client.list_objects(Bucket=bucket, Prefix="raw_tables/"+folder)["Contents"]
+        return [k["Key"] for k in response if k["Key"]]
+    except KeyError: # if folder doesn't exist will be no 'Contents' key so is returned a KeyError
+        return []
 
 def upload_tables(s3_resource: boto3.resource, bucket: str, z: str, folder) -> None:
     print(f"Extracting {z}...")
@@ -83,14 +86,20 @@ def upload_tables(s3_resource: boto3.resource, bucket: str, z: str, folder) -> N
     print("Tables uploaded.\n")
     shutil.rmtree(folder[:4])
 #-----------------------------------------------------------------SCRIPT-----------------------------------------------------------------#
+count = 0
 # GET ZIPFILES NAMES FROM 'zipfiles/'
 names_zipfiles_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
-print(names_zipfiles_bucket)
 # DOWNLOAD ZIPFILES, UNZIP AND WRTIE CSV INTO 'raw_tables/'
 for z in names_zipfiles_bucket:
     year_month = z.split(".")[0][-6:]
     folder = year_month[:4] + "/" + year_month[-2:] + "/"
-    if len(get_list_names_raw_tables_bucket(s3_client, BUCKET_NAME, folder)) == 0:
+    names_raw_tables = get_list_names_raw_tables_bucket(s3_client, BUCKET_NAME, folder)
+    if len(names_raw_tables) == 0:
         download_zipfile_bucket(s3_client, BUCKET_NAME, z)
         os.makedirs(folder)
         upload_tables(s3_resource, BUCKET_NAME, z, folder)
+    else:
+        count += 1
+
+if len(names_zipfiles_bucket) == count:
+    print("All zip files extracted and tables organized.")
