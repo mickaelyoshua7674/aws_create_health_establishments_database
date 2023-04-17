@@ -21,8 +21,8 @@ def print_error() -> None:
 def get_list_names_zipfiles_bucket(s3_client: boto3.client, bucket: str) -> list[str]:
     try:
         print("Getting list of zipfiles in S3 Bucket...")
-        response = s3_client.list_objects(Bucket=bucket)["Contents"]
-        content_zipfiles = [k["Key"] for k in response if k["Key"].startswith("zipfiles/")]
+        response = s3_client.list_objects(Bucket=bucket, Prefix="zipfiles/")["Contents"]
+        content_zipfiles = [k["Key"] for k in response]
         if len(content_zipfiles) == 1:
             print("No zip files in Bucket folder 'zipfiles/'.\n")
             return []
