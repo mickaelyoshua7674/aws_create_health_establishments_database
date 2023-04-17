@@ -9,7 +9,6 @@ import shutil
 
 BUCKET_NAME = "files-cnes-datasus"
 BASE_FILES_NAME = "BASE_DE_DADOS_CNES"
-SITE = "ftp.datasus.gov.br"
 FTP_FOLDER = "cnes"
 
 s3_client = boto3.client("s3")
@@ -25,8 +24,8 @@ def get_list_names_zipfiles_bucket(s3_client: boto3.client, bucket: str) -> list
     """Get list of all zipfiles in folder 'zipfiles/'"""
     try:
         print("Getting list of zipfiles in S3 Bucket...")
-        response = s3_client.list_objects(Bucket=bucket)["Contents"]
-        content_zipfiles = [k["Key"] for k in response if k["Key"].startswith("zipfiles/")]
+        response = s3_client.list_objects(Bucket=bucket, Prefix="zipfiles/")["Contents"]
+        content_zipfiles = [k["Key"] for k in response]
         if len(content_zipfiles) == 1:
             print("No zip files in Bucket folder 'zipfiles/'.\n")
             return []
@@ -66,7 +65,7 @@ def unzip_and_organize(s3_client: boto3.client, bucket: str, zip: str, folder: s
 
 def get_list_names_raw_tables_bucket(s3_client: boto3.client, bucket: str, folder: str) -> list[str]:
     """Get list of all content in 'raw_tables/' plus the folder from the input"""
-    response = s3_client.list_objects(Bucket=bucket)["Contents"]
+    response = s3_client.list_objects(Bucket=bucket, Prefix="raw_tables/")["Contents"]
     return [k["Key"] for k in response if k["Key"].startswith("raw_tables/" + folder)]
 
 def upload_tables(s3_resource: boto3.resource, bucket: str, z: str, folder) -> None:
@@ -88,7 +87,7 @@ def upload_tables(s3_resource: boto3.resource, bucket: str, z: str, folder) -> N
 #-----------------------------------------------------------------SCRIPT-----------------------------------------------------------------#
 # GET ZIPFILES NAMES FROM 'zipfiles/'
 names_zipfiles_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
-
+print(names_zipfiles_bucket)
 # DOWNLOAD ZIPFILES, UNZIP AND WRTIE CSV INTO 'raw_tables/'
 for z in names_zipfiles_bucket:
     year_month = z.split(".")[0][-6:]
