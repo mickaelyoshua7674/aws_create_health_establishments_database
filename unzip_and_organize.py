@@ -8,8 +8,6 @@ import boto3
 import shutil
 
 BUCKET_NAME = "files-cnes-datasus"
-BASE_FILES_NAME = "BASE_DE_DADOS_CNES"
-FTP_FOLDER = "cnes"
 
 s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
