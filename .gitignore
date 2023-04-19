@@ -1,3 +1,4 @@
 tables_to_analyse/
 *.dbc
+*.dbf
 *.pdf
