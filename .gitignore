@@ -1,4 +1,6 @@
 tables_to_analyse/
+dbc_files/
+dbc2csv/
 *.dbc
 *.dbf
 *.pdf
