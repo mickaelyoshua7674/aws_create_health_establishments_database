@@ -19,17 +19,19 @@ def print_error() -> None:
     sys.exit()
 
 def get_list_names_zipfiles_bucket(s3_client: boto3.client, bucket: str) -> list[str]:
-    """Get list of all zipfiles in folder 'zipfiles/'"""
     try:
         print("Getting list of zipfiles in S3 Bucket...")
-        response = s3_client.list_objects(Bucket=bucket, Prefix="zipfiles/")["Contents"]
-        content_zipfiles = [k["Key"] for k in response]
-        if len(content_zipfiles) == 1:
-            print("No zip files in Bucket folder 'zipfiles/'.\n")
+        try:
+            response = s3_client.list_objects(Bucket=bucket, Prefix="zipfiles/")["Contents"]
+            content_zipfiles = [k["Key"] for k in response]
+            if len(content_zipfiles) == 1:
+                print("No zip files in Bucket folder 'zipfiles/'.\n")
+                return []
+            else:
+                print("Names collected.\n")
+                return [item[len("zipfiles/"):] for item in content_zipfiles][1:]
+        except KeyError: # if folder doesn't exist will be no 'Contents' key so is returned a KeyError
             return []
-        else:
-            print("Names collected.\n")
-            return [item[len("zipfiles/"):] for item in content_zipfiles][1:]
     except:
         print("Error getting names of zipfiles in Bucket.")
         print_error()

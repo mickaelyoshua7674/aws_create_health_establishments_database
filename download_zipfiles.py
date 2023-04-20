@@ -21,14 +21,17 @@ def print_error() -> None:
 def get_list_names_zipfiles_bucket(s3_client: boto3.client, bucket: str) -> list[str]:
     try:
         print("Getting list of zipfiles in S3 Bucket...")
-        response = s3_client.list_objects(Bucket=bucket, Prefix="zipfiles/")["Contents"]
-        content_zipfiles = [k["Key"] for k in response]
-        if len(content_zipfiles) == 1:
-            print("No zip files in Bucket folder 'zipfiles/'.\n")
+        try:
+            response = s3_client.list_objects(Bucket=bucket, Prefix="zipfiles/")["Contents"]
+            content_zipfiles = [k["Key"] for k in response]
+            if len(content_zipfiles) == 1:
+                print("No zip files in Bucket folder 'zipfiles/'.\n")
+                return []
+            else:
+                print("Names collected.\n")
+                return [item[len("zipfiles/"):] for item in content_zipfiles][1:]
+        except KeyError: # if folder doesn't exist will be no 'Contents' key so is returned a KeyError
             return []
-        else:
-            print("Names collected.\n")
-            return [item[len("zipfiles/"):] for item in content_zipfiles][1:]
     except:
         print("Error getting names of zipfiles in Bucket.")
         print_error()
@@ -101,9 +104,9 @@ with FTP("ftp.datasus.gov.br") as ftp:
     except:
         print_error()
 
-    # GET ZIPFILES NAMES FROM S3 BUCKET
+# GET ZIPFILES NAMES FROM S3 BUCKET
 zipfiles_names_bucket = get_list_names_zipfiles_bucket(s3_client, BUCKET_NAME)
-
+print(zipfiles_names_bucket)
 if sorted(zipfiles_names_ftp) == sorted(zipfiles_names_bucket):
     print("All zipfiles are uploaded into S3 Bucket.")
 else:
