@@ -1,7 +1,6 @@
 from ftplib import FTP
 import traceback
 import sys
-import os
 import boto3
 
 def print_error() -> None:
@@ -10,7 +9,7 @@ def print_error() -> None:
     print("Closing...")
     sys.exit()
 
-def get_ftp_files_names(site: str, ftp_folder: str, base_file_name: str) -> list[str]:
+def get_files_names_ftp(site: str, ftp_folder: str, base_file_name: str) -> list[str]:
     """Get from ftp connections a list of files names from the given folder starting with the base_file_name"""
     with FTP(site) as ftp:
         try:
@@ -31,27 +30,29 @@ def get_ftp_files_names(site: str, ftp_folder: str, base_file_name: str) -> list
             print_error()
         try:
             f = [f for f in ftp.nlst() if f.startswith(base_file_name)] # ftp.nlst() return a list with all files name
-            print("All zipfiles names collected from ftp server.\n")
+            print("All files names collected from ftp server.\n")
             return f
         except:
             print_error()
 
-def get_list_files_names_bucket(s3_client: boto3.client, bucket: str, prefrix: str) -> list[str]:
+def get_files_names_bucket(s3_client: boto3.client, bucket: str, prefrix: str) -> list[str]:
+    """Get list of all files names if Se Bucket folder. If folders doesn't exist or is empty return an empty list."""
     try:
-        print("Getting list of zipfiles in S3 Bucket...")
+        print("Getting list of files in S3 Bucket...")
         try:
             response = s3_client.list_objects(Bucket=bucket, Prefix=prefrix)["Contents"]
             content_dbcfiles = [k["Key"] for k in response]
             if len(content_dbcfiles) == 1:
-                print(f"No dbc files in Bucket folder 'dbcfiles/'+{prefrix}.\n")
+                print(f"No dbc files in Bucket folder {prefrix}.\n")
                 return []
             else:
                 print("Names collected.\n")
-                return [item[len("dbcfiles/"+prefrix):] for item in content_dbcfiles]
+                return [item[len(prefrix):] for item in content_dbcfiles]
         except KeyError: # if folder doesn't exist will be no 'Contents' key so is returned a KeyError
+            print("Folder doesn't exist in Bucket.")
             return []
     except:
-        print("Error getting names of zipfiles in Bucket.")
+        print("Error getting names of files in Bucket.")
         print_error()
 
 def upload_file_to_bucket(s3_resource: boto3.resource, filename: str, bucket: str, prefrix: str) -> None:
