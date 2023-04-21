@@ -1,10 +1,10 @@
 version: "3.0"
-
 services:
   dbc2csv:
-    image: mickaelyoshua/dbc2csv
+    image: r-base
     volumes:
-      - ./dbc2csv_files:/usr/local/src/myscripts
+      - ./dbc2csv:/usr/local/src/myscripts
+    working_dir: /usr/local/src/myscripts
     environment:
       - DBC_FILE_PATH=$DBC_FILE_PATH
       - CSV_FILE_PATH=$CSV_FILE_PATH
