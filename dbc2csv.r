@@ -1,5 +1,0 @@
-library(read.dbc)
-x <- read.dbc("C:/Users/micka/Documents/projects/aws_create_health_establishments_database/dbc_files/PAPB2201.dbc")
-str(x)
-summary(x)
-write.csv(x, "C:/Users/micka/Documents/projects/aws_create_health_establishments_database/dbc_files/PAPB2201.csv", row.names = FALSE)

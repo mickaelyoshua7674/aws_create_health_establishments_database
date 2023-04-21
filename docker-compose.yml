@@ -1,0 +1,12 @@
+version: "3.0"
+
+services:
+  dbc2csv:
+    image: mickaelyoshua/dbc2csv
+    volumes:
+      - ./dbc2csv_files:/usr/local/src/myscripts
+    environment:
+      - DBC_FILE_PATH=dbc_files/PAPB2201.dbc
+      - CSV_FILE_PATH=csv_files/PAPB2201.csv
+    command: ["Rscript", "dbc2csv.r"]
+    
