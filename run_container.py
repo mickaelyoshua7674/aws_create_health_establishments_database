@@ -9,6 +9,8 @@ install_config_docker = "sudo yum update -y && " + \
     "sudo service docker start && " + \
     "usermod -a -G docker ec2-user && " + \
     "chkconfig docker on && " + \
+    "curl -O https://bootstrap.pypa.io/get-pip.py && " + \
+    "python3 get-pip.py --user && " + \
     "pip3 install docker-compose && " + \
     "sudo reboot"
     
