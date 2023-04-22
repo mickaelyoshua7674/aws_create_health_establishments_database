@@ -2,9 +2,7 @@ install_config_docker = "sudo yum update -y && " + \
     "sudo yum install docker containerd git screen -y && " + \
     "wget https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) && " + \
     "sudo mv docker-compose-$(uname -s)-$(uname -m) /usr/libexec/docker/cli-plugins/docker-compose && " + \
-    "chmod +x /usr/libexec/docker/cli-plugins/docker-compose && " + \
-    "sudo usermod -a -G docker ec2-user && " + \
-    "sudo usermod -a -G docker ssm-user"
+    "chmod +x /usr/libexec/docker/cli-plugins/docker-compose"
     
 
 import os
