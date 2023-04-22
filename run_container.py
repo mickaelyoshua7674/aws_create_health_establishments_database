@@ -1,11 +1,18 @@
-install_config_docker = "yum update && " + \
-    "yum -y install docker && " + \
-    "service docker start && " + \
+# install_config_docker = "sudo yum update -y && " + \
+#     "sudo yum install docker containerd git screen -y && " + \
+#     "wget https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) && " + \
+#     "sudo mv docker-compose-$(uname -s)-$(uname -m) /usr/libexec/docker/cli-plugins/docker-compose && " + \
+#     "chmod +x /usr/libexec/docker/cli-plugins/docker-compose"
+
+install_config_docker = "sudo yum update -y && " + \
+    "sudo yum install docker -y && " + \
+    "sudo service docker start && " + \
     "usermod -a -G docker ec2-user && " + \
     "chkconfig docker on && " + \
     "pip3 install docker-compose && " + \
-    "reboot"
+    "sudo reboot"
     
+
 import os
 
 os.system(install_config_docker)
