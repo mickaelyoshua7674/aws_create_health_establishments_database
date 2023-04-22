@@ -11,7 +11,7 @@ BUCKET_FOLDER_RAW_TABLES = "cnes/raw_tables/"
 s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
 
-# GET ZIPFILES NAMES FROM S3 BUCKET
+# GET ZIPFILES NAMES FROM BUCKET
 zipfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FOLDER_ZIPFILES)
 
 for z in zipfiles_names_bucket:
