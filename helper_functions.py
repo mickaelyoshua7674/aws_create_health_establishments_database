@@ -125,8 +125,13 @@ def unzip_and_organize(s3_client: boto3.client, bucket: str, zip: str, prefix: s
             if base_table_name in target_tables and base_table_name not in tables_uploaded:
                 print(f"Writing {table_name} into S3 Bucket...")
                 with zf.open(table_name, "r") as table: # opening target file
-                    r = csv.reader(io.TextIOWrapper(table, "utf-8"), delimiter=";") # decoding and reading file
-                    rows = [row for row in r]
+                    try:
+                        r = csv.reader(io.TextIOWrapper(table, "utf-8"), delimiter=";") # decoding and reading file
+                        rows = [row for row in r]
+                    except UnicodeDecodeError:
+                        print("'utf-8' couldn't decode, trying 'ISO-8859-1'...")
+                        r = csv.reader(io.TextIOWrapper(table, "ISO-8859-1"), delimiter=";") # decoding and reading file
+                        rows = [row for row in r]
 
                     buff = io.StringIO()
                     csv.writer(buff).writerows(rows)
