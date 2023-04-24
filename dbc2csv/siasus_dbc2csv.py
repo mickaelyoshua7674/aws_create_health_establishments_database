@@ -19,10 +19,7 @@ for file in dbcfiles_names_bucket:
         download_file_bucket(s3_client, BUCKET_NAME, file, BUCKET_FOLDER_DBCFILES)
 
         print(f"Converting {file} to csv...")
-        if count == 0:
-            os.system(f"DBC_FILE_PATH=./{file} CSV_FILE_PATH=./{base_file_name}.csv docker-compose up")
-        else:
-            os.system(f"DBC_FILE_PATH=./{file} CSV_FILE_PATH=./{base_file_name}.csv docker-compose restart")
+        os.system(f"DBC_FILE_PATH=./{file} CSV_FILE_PATH=./{base_file_name}.csv docker-compose up")
         print(f"{file} converted.\n")
 
         upload_file_to_bucket(s3_resource, f"{base_file_name}.csv", BUCKET_NAME, BUCKET_FOLDER_RAW_TABLES)
@@ -30,7 +27,6 @@ for file in dbcfiles_names_bucket:
         os.remove(file)
         os.remove(f"{base_file_name}.csv")
 
-        os.system("docker-compose stop")
         count += 1
 
 if count == 0:
