@@ -12,7 +12,6 @@ s3_resource = boto3.resource("s3")
 dbcfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FOLDER_DBCFILES)
 csvfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FOLDER_RAW_TABLES)
 
-count = 0
 for file in dbcfiles_names_bucket:
     base_file_name = file.split(".")[0]
     if base_file_name + ".csv" not in csvfiles_names_bucket:
@@ -27,9 +26,4 @@ for file in dbcfiles_names_bucket:
         os.remove(file)
         os.remove(f"{base_file_name}.csv")
 
-        count += 1
-
-if count == 0:
-    print("All files aready updated.\n")
-else:
-    os.system("docker-compose down")
+        os.system("docker-compose down")
