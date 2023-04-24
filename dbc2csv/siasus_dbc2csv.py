@@ -27,6 +27,6 @@ for file in dbcfiles_names_bucket:
         os.remove(file)
         os.remove(f"{base_file_name}.csv")
 
-        os.system("docker-compose down")
+        os.system(f"DBC_FILE_PATH=./{file} CSV_FILE_PATH=./{base_file_name}.csv docker-compose down")
 
         gc.collect()
