@@ -29,7 +29,7 @@ def get_files_names_ftp(site: str, ftp_folder: str, base_file_name: str) -> list
                 print("Failed to log in.")
                 sys.exit()
 
-            # GO TO 'cnes' DIRECTORY
+            # GO TO DIRECTORY
             if ftp.cwd(ftp_folder).startswith("250"): # ftp.cwd() 'change working diretory' to cnes and return a string with the response
                 print(f"Directory changed to {ftp_folder}.\n")
             else:
