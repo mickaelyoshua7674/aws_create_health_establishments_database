@@ -2,7 +2,6 @@ from helper_functions import *
 import os
 
 BUCKET_NAME = "laos-datasus"
-SITE = "ftp.datasus.gov.br"
 
 BUCKET_FOLDER_ZIPFILES = "cnes/zipfiles/"
 
