@@ -10,6 +10,6 @@ sudo yum install python3-pip -y &&
 pip install boto3 && 
 git clone https://github.com/mickaelyoshua7674/aws_create_health_establishments_database.git &&
 cd aws_create_health_establishments_database/dbc2csv/ &&
- newgrp docker
+newgrp docker
 
 # config awscli
