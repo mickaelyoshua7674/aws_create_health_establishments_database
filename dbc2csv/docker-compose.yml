@@ -4,7 +4,7 @@ services:
   dbc2csv:
     image: r-base
     volumes:
-      - ./dbc2csv.r:/usr/local/src/myscripts
+      - ./:/usr/local/src/myscripts
     working_dir: /usr/local/src/myscripts
     environment:
       - DBC_FILE_PATH=$DBC_FILE_PATH
