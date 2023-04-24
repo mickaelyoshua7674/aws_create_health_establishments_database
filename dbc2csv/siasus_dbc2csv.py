@@ -1,5 +1,6 @@
 from helper_functions import *
 import os
+import gc
 
 BUCKET_NAME = "laos-datasus"
 BUCKET_FOLDER_DBCFILES = "siasus/dbcfiles/"
@@ -27,3 +28,5 @@ for file in dbcfiles_names_bucket:
         os.remove(f"{base_file_name}.csv")
 
         os.system("docker-compose down")
+
+        gc.collect()
