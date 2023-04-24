@@ -14,7 +14,7 @@ csvfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FO
 
 count = 0
 for file in dbcfiles_names_bucket:
-    if file.split(".")[0] + ".dbc" not in csvfiles_names_bucket:
+    if file.split(".")[0] + ".csv" not in csvfiles_names_bucket:
         download_file_bucket(s3_client, BUCKET_NAME, file, BUCKET_FOLDER_DBCFILES)
 
         print(f"Converting {file} to csv...")
