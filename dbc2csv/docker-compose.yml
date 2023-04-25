@@ -7,5 +7,6 @@ services:
       - ./:/usr/local/src/myscripts
     working_dir: /usr/local/src/myscripts
     environment:
-      - BASE_FILE_NAME=$BASE_FILE_NAME
+      - DBC_FILE_PATH=$DBC_FILE_PATH
+      - CSV_FILE_PATH=$CSV_FILE_PATH
     command: ["Rscript", "dbc2csv.r"]
