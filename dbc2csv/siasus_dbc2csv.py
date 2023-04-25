@@ -15,20 +15,16 @@ dbcfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FO
 # GET CSVFILES NAMES FROM BUCKET
 csvfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FOLDER_RAW_TABLES)
 
-for file in dbcfiles_names_bucket:
-    base_file_name = file.split(".")[0]
-    if base_file_name + ".csv" not in csvfiles_names_bucket:
-        download_file_bucket(s3_client, BUCKET_NAME, file, BUCKET_FOLDER_DBCFILES)
-
-        print(f"Converting {file} to csv...")
-        os.system(f"BASE_FILE_NAME={base_file_name} docker-compose up")
-        print(f"{file} converted.\n")
-
-        upload_file_to_bucket(s3_resource, f"{base_file_name}.csv", BUCKET_NAME, BUCKET_FOLDER_RAW_TABLES)
-
-        os.remove(file)
-        os.remove(f"{base_file_name}.csv")
-
-        os.system(f"DBC_FILE_PATH=./{file} CSV_FILE_PATH=./{base_file_name}.csv docker-compose down")
-
-        gc.collect()
+for dbc_file_name in dbcfiles_names_bucket:
+    csv_file_name = dbc_file_name.split(".")[0] + ".csv"
+    
+    if csv_file_name not in csvfiles_names_bucket:
+        print(f"Converting {dbc_file_name} to csv and uploading the csv...")
+        # SEND COMMAND TO EC2
+        check = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FOLDER_RAW_TABLES + csv_file_name)
+        if len(check) == 1:
+            print(f"{dbc_file_name} converted and uploaded.\n")
+        elif len(check) == 0:
+            print(f"Failed to convert and upload {dbc_file_name}.\n")
+        else:
+            print("When checking if csv is on Bucket returned more then one file.")
