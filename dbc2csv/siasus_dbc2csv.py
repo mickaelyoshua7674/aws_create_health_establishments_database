@@ -1,6 +1,4 @@
 from helper_functions import *
-import os
-import gc
 
 BUCKET_NAME = "laos-datasus"
 BUCKET_FOLDER_DBCFILES = "siasus/dbcfiles/"
@@ -17,7 +15,7 @@ csvfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FO
 
 for dbc_file_name in dbcfiles_names_bucket:
     csv_file_name = dbc_file_name.split(".")[0] + ".csv"
-    
+
     if csv_file_name not in csvfiles_names_bucket:
         print(f"Converting {dbc_file_name} to csv and uploading the csv...")
         # SEND COMMAND TO EC2
