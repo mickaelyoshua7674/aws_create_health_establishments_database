@@ -17,7 +17,7 @@ print(base_file_name)
 # download_file_bucket(s3_client, BUCKET_NAME, dbc_file_name, BUCKET_FOLDER_DBCFILES)
 
 # print(f"Converting {dbc_file_name} to csv...")
-# os.system(f"BASE_FILE_NAME={base_file_name} docker-compose up")
+# os.system(f"DBC_FILE_PATH=./{dbc_file_name} CSV_FILE_PATH=./{csv_file_name} docker-compose up")
 # print(f"{dbc_file_name} converted.\n")
 
 # upload_file_to_bucket(s3_resource, csv_file_name, BUCKET_NAME, BUCKET_FOLDER_RAW_TABLES)
@@ -25,6 +25,6 @@ print(base_file_name)
 # os.remove(dbc_file_name)
 # os.remove(csv_file_name)
 
-# os.system(f"BASE_FILE_NAME={base_file_name} docker-compose down")
+# os.system(f"DBC_FILE_PATH=./{dbc_file_name} CSV_FILE_PATH=./{csv_file_name} docker-compose down")
 
 # gc.collect()
