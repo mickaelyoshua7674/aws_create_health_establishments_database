@@ -21,13 +21,17 @@ dbcfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FO
 # GET CSVFILES NAMES FROM BUCKET
 csvfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FOLDER_RAW_TABLES)
 
+# REBOOT EC2 INSTANCE
+ec2_client.reboot_instances(InstanceIds=[ec2_dbc2csv_id])
+time.sleep(2)
+
 for dbc_file_name in dbcfiles_names_bucket:
     base_file_name = dbc_file_name.split(".")[0]
     csv_file_name = base_file_name + ".csv"
 
     if csv_file_name not in csvfiles_names_bucket:
         print(f"Converting {dbc_file_name} to csv and uploading the csv...")
-        
+
         # SEND COMMAND TO EC2
         script = \
             "cd aws_create_health_establishments_database/dbc2csv/ && " + \
@@ -52,6 +56,7 @@ for dbc_file_name in dbcfiles_names_bucket:
         status = response_status["Status"]
         print(status + "...")
 
+        start_time = time.time()
         while True:
             response_status = ssm_client.get_command_invocation(
                 CommandId=response_send["Command"]["CommandId"],
@@ -68,6 +73,16 @@ for dbc_file_name in dbcfiles_names_bucket:
             else: # if change the status but is not finished
                 status = new_status
                 print(status + "...")
+
+            if time.time() - start_time > 5*60: # if time on loop is bigger then 5min
+                response_send = ssm_client.send_command( # delete container and network that was running and delete .dbc files locally
+                    DocumentName ="AWS-RunShellScript",
+                    Parameters = {"commands": ["cd aws_create_health_establishments_database/dbc2csv/ && docker-compose down && rm *.dbc"]},
+                    InstanceIds = [ec2_dbc2csv_id]
+                )
+                time.sleep(2)
+                ec2_client.reboot_instances(InstanceIds=[ec2_dbc2csv_id]) # reboot ec2 instance
+                time.sleep(2)
         
         if status != "Success":
             print("Somethig went wrong on runing script on EC2 Instance.")
