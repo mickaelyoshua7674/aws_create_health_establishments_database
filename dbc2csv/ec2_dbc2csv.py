@@ -25,6 +25,6 @@ upload_file_to_bucket(s3_resource, csv_file_name, BUCKET_NAME, BUCKET_FOLDER_RAW
 os.remove(dbc_file_name)
 os.remove(csv_file_name)
 
-os.system(f"DBC_FILE_PATH=./{dbc_file_name} CSV_FILE_PATH=./{csv_file_name} docker-compose down")
+os.system(f"docker-compose down")
 
 gc.collect()
