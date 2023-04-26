@@ -5,6 +5,7 @@ import boto3
 import zipfile
 import io
 import csv
+import time
 
 target_tables = ["tbGrupoAtividade", "tbAtividade", "tbGrupoEquipe", "tbTipoEquipe", "tbEquipe",
                  "tbAtividadeProfissional", "tbConselhoClasse", "tbDadosProfissionalSus", "tbCargaHorariaSus",
@@ -116,7 +117,7 @@ def download_file_bucket(s3_client: boto3.client, bucket: str, file: str, prefix
     print(f"{file} downloaded.\n")
 
 def unzip_and_organize(s3_client: boto3.client, bucket: str, zip: str, prefix: str, tables_uploaded: list[str]) -> None:
-    """"""
+    """Get files from folder and unzip target tables in organized folders."""
     print(f"\nOpening {zip}...")
     with zipfile.ZipFile(zip, "r") as zf: # openning zipfile
         for table_name in zf.namelist():
@@ -138,3 +139,68 @@ def unzip_and_organize(s3_client: boto3.client, bucket: str, zip: str, prefix: s
 
                     s3_client.put_object(Bucket=bucket, Key=prefix + table_name, Body=buff.getvalue().encode("utf-8", "replace"))
                     print(f"{table_name} written.\n")
+
+def dbc2csv(ssm_client: boto3.client, ec2_client: boto3.client, dbc_file_name: str,
+            bucket: str, bucket_folder_dbcfiles: str, bucket_folder_csvfiles: str, instance_id: str) -> None:
+    """Run script in EC2 instance converting dbc to csv and uploading the csv."""
+    base_file_name = dbc_file_name.split(".")[0]
+    print(f"Converting {dbc_file_name} to csv and uploading the csv...")
+
+    # SEND COMMAND TO EC2
+    script = \
+        "cd aws_create_health_establishments_database/dbc2csv/ && " + \
+        "git pull && " + \
+        f"BUCKET_NAME={bucket} BUCKET_FOLDER_DBCFILES={bucket_folder_dbcfiles} " + \
+        f"BUCKET_FOLDER_RAW_TABLES={bucket_folder_csvfiles} BASE_FILE_NAME={base_file_name} python3 ec2_dbc2csv.py"
+    
+    print("Executing command in EC2 Instance...")
+    # RUN SHELL SCRIPT
+    response_send = ssm_client.send_command(
+        DocumentName ="AWS-RunShellScript",
+        Parameters = {"commands": [script]},
+        InstanceIds = [instance_id]
+    )
+
+    # CHECK STATUS OF COMMAND
+    time.sleep(1)
+    response_status = ssm_client.get_command_invocation(
+        CommandId=response_send["Command"]["CommandId"],
+        InstanceId=instance_id
+    )
+    status = response_status["Status"]
+    print(status + "...")
+
+    start_time = time.time()
+    while True:
+        response_status = ssm_client.get_command_invocation(
+            CommandId=response_send["Command"]["CommandId"],
+            InstanceId=instance_id
+        )
+        new_status = response_status["Status"]
+
+        if new_status in ["Success", "Cancelled", "Failed", "TimedOut"]: # if command ends
+            status = new_status
+            print(f"Final status of command is {new_status}.")
+            break
+        elif status == new_status: # if is still the same status
+            pass
+        else: # if change the status but is not finished
+            status = new_status
+            print(status + "...")
+
+        if time.time() - start_time > 5*60: # if time on loop is bigger then 5min
+            response_send = ssm_client.send_command( # delete container and network that was running and delete .dbc files locally
+                DocumentName ="AWS-RunShellScript",
+                Parameters = {"commands": ["cd aws_create_health_establishments_database/dbc2csv/ && docker-compose down && rm *.dbc"]},
+                InstanceIds = [instance_id]
+            )
+            time.sleep(2)
+            ec2_client.reboot_instances(InstanceIds=[instance_id]) # reboot ec2 instance
+            time.sleep(2)
+    
+    if status != "Success":
+        print("Somethig went wrong on runing script on EC2 Instance.")
+        print(f"Status: {status}")
+        sys.exit()
+    else:
+        print(f"{dbc_file_name} converted and uploaded.\n")
