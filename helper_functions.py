@@ -196,7 +196,7 @@ def dbc2csv(ssm_client: boto3.client, ec2_client: boto3.client, dbc_file_name: s
             )
             time.sleep(2)
             ec2_client.reboot_instances(InstanceIds=[instance_id]) # reboot ec2 instance
-            time.sleep(2)
+            time.sleep(5)
     
     if status != "Success":
         print("Somethig went wrong on runing script on EC2 Instance.")

@@ -23,7 +23,7 @@ csvfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FO
 
 # REBOOT EC2 INSTANCE
 ec2_client.reboot_instances(InstanceIds=[ec2_dbc2csv_id])
-time.sleep(2)
+time.sleep(5)
 
 for dbc_file_name in dbcfiles_names_bucket:
     base_file_name = dbc_file_name.split(".")[0]
