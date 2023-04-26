@@ -2,14 +2,14 @@ from helper_functions import *
 import os
 import gc
 
-BUCKET_NAME = "laos-datasus"
-BUCKET_FOLDER_DBCFILES = "siasus/dbcfiles/"
-BUCKET_FOLDER_RAW_TABLES = "siasus/raw_tables/"
+BUCKET_NAME = os.getenv("BUCKET_NAME")
+BUCKET_FOLDER_DBCFILES = os.getenv("BUCKET_FOLDER_DBCFILES")
+BUCKET_FOLDER_RAW_TABLES = os.getenv("BUCKET_FOLDER_RAW_TABLES")
+BASE_FILE_NAME = os.getenv("BASE_FILE_NAME")
 
-base_file_name = os.getenv("BASE_FILE_NAME")
-dbc_file_name = base_file_name + ".dbc"
-csv_file_name = base_file_name + ".csv"
-print(base_file_name)
+dbc_file_name = BASE_FILE_NAME + ".dbc"
+csv_file_name = BASE_FILE_NAME + ".csv"
+print(BASE_FILE_NAME)
 
 s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
