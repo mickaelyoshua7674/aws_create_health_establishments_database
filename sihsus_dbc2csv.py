@@ -1,4 +1,5 @@
 from helper_functions import *
+import time
 
 BUCKET_NAME = "laos-datasus"
 BUCKET_FOLDER_DBCFILES = "sihsus/dbcfiles/"
@@ -43,6 +44,7 @@ for dbc_file_name in dbcfiles_names_bucket:
         )
 
         # CHECK STATUS OF COMMAND
+        time.sleep(1)
         response_status = ssm_client.get_command_invocation(
             CommandId=response_send["Command"]["CommandId"],
             InstanceId=ec2_dbc2csv_id
