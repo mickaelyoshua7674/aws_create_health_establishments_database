@@ -1,8 +1,6 @@
+from helper_functions import *
 import os
 import gc
-import sys
-sys.path.append("../aws_create_health_establishments_database")
-from helper_functions import *
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 BUCKET_FOLDER_DBCFILES = os.getenv("BUCKET_FOLDER_DBCFILES")
