@@ -189,12 +189,6 @@ def dbc2csv(ssm_client: boto3.client, ec2_client: boto3.client, dbc_file_name: s
             print(status + "...")
 
         if time.time() - start_time > 5*60: # if time on loop is bigger then 5min
-            response_send = ssm_client.send_command( # delete container and network that was running and delete .dbc files locally
-                DocumentName ="AWS-RunShellScript",
-                Parameters = {"commands": ["cd aws_create_health_establishments_database/dbc2csv/ && docker-compose down && rm *.dbc"]},
-                InstanceIds = [instance_id]
-            )
-            time.sleep(2)
             ec2_client.reboot_instances(InstanceIds=[instance_id]) # reboot ec2 instance
             time.sleep(5)
     
