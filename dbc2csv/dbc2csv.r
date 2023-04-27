@@ -1,5 +1,6 @@
-install.packages("languageserver")
-install.packages("https://cran.r-project.org/src/contrib/Archive/read.dbc/read.dbc_1.0.5.tar.gz", repos = NULL)
+# ‘~/R/x86_64-amazon-linux-gnu-library/4.1’
+# install.packages("languageserver")
+# install.packages("https://cran.r-project.org/src/contrib/Archive/read.dbc/read.dbc_1.0.5.tar.gz", repos = NULL)
 library(read.dbc)
 
 dbc_file_path <- Sys.getenv("DBC_FILE_PATH") # DBC_FILE_PATH=./PAPB2209.dbc CSV_FILE_PATH=./PAPB2209.csv Rscript dbc2csv.r
