@@ -1,3 +1,4 @@
+install.packages("languageserver")
 install.packages("https://cran.r-project.org/src/contrib/Archive/read.dbc/read.dbc_1.0.5.tar.gz", repos = NULL)
 library(read.dbc)
 
