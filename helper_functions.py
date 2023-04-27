@@ -143,6 +143,10 @@ def unzip_and_organize(s3_client: boto3.client, bucket: str, zip: str, prefix: s
 def dbc2csv(ssm_client: boto3.client, ec2_client: boto3.client, dbc_file_name: str,
             bucket: str, bucket_folder_dbcfiles: str, bucket_folder_csvfiles: str, instance_id: str) -> None:
     """Run script in EC2 instance converting dbc to csv and uploading the csv."""
+
+    ec2_client.reboot_instances(InstanceIds=[instance_id]) # reboot ec2 instance
+    time.sleep(5)
+    
     base_file_name = dbc_file_name.split(".")[0]
     print(f"Converting {dbc_file_name} to csv and uploading the csv...")
 
