@@ -143,6 +143,10 @@ def unzip_and_organize(s3_client: boto3.client, bucket: str, zip: str, prefix: s
 def dbc2csv(ssm_client: boto3.client, ec2_client: boto3.client, dbc_file_name: str,
             bucket: str, bucket_folder_dbcfiles: str, bucket_folder_csvfiles: str, instance_id: str) -> None:
     """Run script in EC2 instance converting dbc to csv and uploading the csv."""
+
+    ec2_client.reboot_instances(InstanceIds=[instance_id]) # reboot ec2 instance
+    time.sleep(5)
+    
     base_file_name = dbc_file_name.split(".")[0]
     print(f"Converting {dbc_file_name} to csv and uploading the csv...")
 
@@ -189,12 +193,6 @@ def dbc2csv(ssm_client: boto3.client, ec2_client: boto3.client, dbc_file_name: s
             print(status + "...")
 
         if time.time() - start_time > 5*60: # if time on loop is bigger then 5min
-            response_send = ssm_client.send_command( # delete container and network that was running and delete .dbc files locally
-                DocumentName ="AWS-RunShellScript",
-                Parameters = {"commands": ["cd aws_create_health_establishments_database/dbc2csv/ && docker-compose down && rm *.dbc"]},
-                InstanceIds = [instance_id]
-            )
-            time.sleep(2)
             ec2_client.reboot_instances(InstanceIds=[instance_id]) # reboot ec2 instance
             time.sleep(5)
     
