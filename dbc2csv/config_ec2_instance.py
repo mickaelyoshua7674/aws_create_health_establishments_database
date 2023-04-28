@@ -24,4 +24,13 @@ pip install boto3
 pip install awscli
 """
 
+script = \
+"sudo apt-get update && " + \
+"sudo apt-get upgrade -y && " + \
+"sudo apt-get install r-base -y && " + \
+"sudo apt-get install python3-pip -y && " + \
+"sudo apt-get install awscli -y && " + \
+"pip install boto3 && " + \
+"git clone https://github.com/mickaelyoshua7674/aws_create_health_establishments_database.git"
+
 # config awscli

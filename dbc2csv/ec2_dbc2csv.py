@@ -1,7 +1,6 @@
 from helper_functions import *
 import os
 import gc
-import subprocess
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 BUCKET_FOLDER_DBCFILES = os.getenv("BUCKET_FOLDER_DBCFILES")
@@ -18,7 +17,7 @@ download_file_bucket(s3_client, BUCKET_NAME, dbc_file_name, BUCKET_FOLDER_DBCFIL
 
 print(f"Converting {dbc_file_name} to csv...")
 #os.system(f"DBC_FILE_PATH=./{dbc_file_name} CSV_FILE_PATH=./{csv_file_name} Rscript dbc2csv.r")
-subprocess.call(f"DBC_FILE_PATH=./{dbc_file_name} CSV_FILE_PATH=./{csv_file_name} Rscript dbc2csv.r", shell=True)
+os.system(f"DBC_FILE_PATH=$(pwd)/{dbc_file_name} CSV_FILE_PATH=$(pwd)/{csv_file_name} Rscript dbc2csv.r", shell=True)
 print(f"{dbc_file_name} converted.\n")
 
 upload_file_to_bucket(s3_resource, csv_file_name, BUCKET_NAME, BUCKET_FOLDER_RAW_TABLES)

@@ -12,7 +12,7 @@ ec2_client = boto3.client("ec2")
 ssm_client = boto3.client("ssm")
 
 # GET THE EC2 INSTANCE ID
-ec2_dbc2csv = ec2_client.describe_instances(Filters = [{"Name": "tag:Name", "Values": ["dbc2csv"]}])
+ec2_dbc2csv = ec2_client.describe_instances(Filters = [{"Name": "tag:Name", "Values": ["r_ubuntu"]}])
 ec2_dbc2csv_id = ec2_dbc2csv["Reservations"][0]["Instances"][0]["InstanceId"]
 
 # GET DBCFILES NAMES FROM BUCKET
