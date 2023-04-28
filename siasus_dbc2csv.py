@@ -21,18 +21,21 @@ dbcfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FO
 # GET CSVFILES NAMES FROM BUCKET
 csvfiles_names_bucket = get_files_names_bucket(s3_client, BUCKET_NAME, BUCKET_FOLDER_RAW_TABLES)
 
-if sorted(dbcfiles_names_bucket) == sorted(csvfiles_names_bucket):
-    print("All files up to date.")
-else:
-    print("Rebooting EC2 instance...")
-    # REBOOT EC2 INSTANCE
-    ec2_client.reboot_instances(InstanceIds=[ec2_dbc2csv_id])
-    time.sleep(5)
-    print("EC2 instance rebooted.\n")
+print("Rebooting EC2 instance...")
+# REBOOT EC2 INSTANCE
+ec2_client.reboot_instances(InstanceIds=[ec2_dbc2csv_id])
+time.sleep(5)
+print("EC2 instance rebooted.\n")
 
-    for dbc_file_name in dbcfiles_names_bucket:
-        base_file_name = dbc_file_name.split(".")[0]
-        csv_file_name = base_file_name + ".csv"
+count = 0
+for dbc_file_name in dbcfiles_names_bucket:
+    base_file_name = dbc_file_name.split(".")[0]
+    csv_file_name = base_file_name + ".csv"
 
-        if csv_file_name not in csvfiles_names_bucket:
-            dbc2csv(ssm_client, ec2_client, dbc_file_name, BUCKET_NAME, BUCKET_FOLDER_DBCFILES, BUCKET_FOLDER_RAW_TABLES, ec2_dbc2csv_id)
+    if csv_file_name not in csvfiles_names_bucket:
+        dbc2csv(ssm_client, ec2_client, dbc_file_name, BUCKET_NAME, BUCKET_FOLDER_DBCFILES, BUCKET_FOLDER_RAW_TABLES, ec2_dbc2csv_id)
+    else:
+        count += 1
+
+if count == len(csvfiles_names_bucket):
+    print("All files are up to date")
